@@ -1,0 +1,5 @@
+{
+  "link_str": "sqlite:///lottery.db",
+  "dlt_table": "dlt",
+  "dlt_fields": ["term", "f1", "f2", "f3", "f4", "f5", "b1", "b2"]
+}

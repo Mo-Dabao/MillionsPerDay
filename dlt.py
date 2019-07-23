@@ -1,115 +1,161 @@
 # coding: utf-8
 """
-大乐透分析
+大乐透
 
-@file: dlt.py
+Created on 2019-5-27 09:11:17
 @author: modabao
-@software: PyCharm
 """
 
 
-import random
+from datetime import datetime
+
 import pandas as pd
-from dlt_tools import (update, get_history, check_awards, fields, get_freq,
-                       history_columns, all_columns, front_balls, back_balls,
-                       get_winning_rate)
+
+from tools import config, get_last_term, get_html, add2db, get_history
 
 
-# %% 读取数据
-table_name = 'dlt'
-update()
-history = get_history(table_name, fields)
-history.columns = history_columns
+config = config["dlt"]
 
 
-# %% 盲猜
-blind_guess = [random.sample(front_balls, 5) + random.sample(back_balls, 2)
-               for x in range(len(history.index))]
-blind_guess = pd.DataFrame(blind_guess, index=history.index,
-                           columns=history_columns)
-awards_blind_guess = check_awards(blind_guess, history)
-profit_blind_guess = awards_blind_guess['prize'].sum() - len(history.index) * 2
+class DLT(object):
+    """
+    大乐透
+    """
+    table_name = config['table_name']
+    field_names = config['field_names']
+    front_balls = config['front_balls']
+    back_balls = config['back_balls']
+    award_prize = config['award_prize']
+    all_balls = [['front'] * 35 + ['back'] * 12, front_balls + back_balls]
+    all_balls = pd.MultiIndex.from_tuples(list(zip(*all_balls)),
+                                          names=['part', 'ball'])
+    win_balls = [['front'] * 5 + ['back'] * 2, field_names[1:]]
+    win_balls = pd.MultiIndex.from_tuples(list(zip(*win_balls)),
+                                          names=['part', 'ball'])
+    url_template = (
+        'https://datachart.500.com/ssq/history/newinc/history.php?'
+        'start={start}&end={end}')
+    xpath_records = '//*[@id="tdata"]/tr'
+    xpath_record = './td[position()<=8]/text()'
 
+    def __init__(self):
+        """"""
+        self.history = None
+        self.update()
 
-# %% 最大、最小频率
-history_frq = get_freq(history, terms=None)
-max_frq = []
-min_frq = []
-terms = []
-for n, x in enumerate(history_frq.index):
-    if n == 0:
-        terms.append(f'{int(x)+1:05d}')
-    else:
-        terms.append(history_frq.index[n-1])
-    f = history_frq.loc[x]['front'].sort_values(0)
-    b = history_frq.loc[x]['back'].sort_values(0)
-    min_frq.append(f.index[:5].tolist() + b.index[:2].tolist())
-    max_frq.append(f.index[-5:].tolist() + b.index[-2:].tolist())
-min_frq = pd.DataFrame(min_frq, index=terms, columns=history_columns)
-max_frq = pd.DataFrame(max_frq, index=terms, columns=history_columns)
-awards_min_frq = check_awards(min_frq, history)
-profit_min_frq = awards_min_frq['prize'].sum() - len(history.index) * 2
-awards_max_frq = check_awards(max_frq, history)
-profit_max_frq = awards_max_frq['prize'].sum() - len(history.index) * 2
+    @classmethod
+    def update(cls):
+        """
+        更新大乐透数据
+        :return:
+        """
+        # 读取上一期已保存的期号
+        last_term = get_last_term(cls.table_name, cls.field_names)
+        start_term = f'{int(last_term)+1:05d}'
+        end_term = f'{datetime.now().year % 100}999'
+        url = cls.url_template.format(start=start_term, end=end_term)
+        html = get_html(url)
+        records = [x.xpath(cls.xpath_record)
+                   for x in html.xpath(cls.xpath_records)]
+        if records:
+            add2db(cls.table_name, cls.field_names, records)
+            new_last_term = records[0][0]
+        else:
+            new_last_term = last_term
+        return last_term, new_last_term
 
+    def get_history(self, term=None, start_term='00000', end_term='99999', terms=None):
+        """
+        获取大乐透历史开奖纪录
 
-# %% 滑动最大、最小频率
-history_frq = get_freq(history, terms=200, step=50)
-max_frq = []
-min_frq = []
-terms = []
-for n, x in enumerate(history_frq.index):
-    if n == 0:
-        terms.append(f'{int(x)+1:05d}')
-    else:
-        terms.append(history_frq.index[n-1])
-    f = history_frq.loc[x]['front'].sort_values(0)
-    b = history_frq.loc[x]['back'].sort_values(0)
-    min_frq.append(f.index[:5].tolist() + b.index[:2].tolist())
-    max_frq.append(f.index[-5:].tolist() + b.index[-2:].tolist())
-min_frq = pd.DataFrame(min_frq, index=terms, columns=history_columns)
-max_frq = pd.DataFrame(max_frq, index=terms, columns=history_columns)
-awards_min_frq = check_awards(min_frq, history)
-profit_min_frq = awards_min_frq['prize'].sum() - len(min_frq.index) * 2
-awards_max_frq = check_awards(max_frq, history)
-profit_max_frq = awards_max_frq['prize'].sum() - len(max_frq.index) * 2
-winning_rate_min_frq = get_winning_rate(awards_min_frq)
-winning_rate_max_frq = get_winning_rate(awards_max_frq)
+        :param term:
+        :param start_term:
+        :param end_term:
+        :param terms:
+        :return:
+        """
+        self.history = get_history(self.table_name, self.field_names, term,
+                                   start_term, end_term, terms)
+        self.history.columns = self.win_balls
 
+    def get_freq(self, history=None, terms=1, step=None):
+        """
+        求一段时间内各号出现次数
+        """
+        if not history and hasattr(self, 'history'):
+            history = self.history
+        elif not history:
+            self.get_history()
+            history = self.history
+        index = history.index[:terms] if terms else history.index
+        freq = []
+        if step:
+            for n, x in enumerate(index):
+                freq.append(self.get_freq_core(history.iloc[n:n+step]))
+        else:
+            for n, x in enumerate(index):
+                freq.append(self.get_freq_core(history.iloc[n:]))
+        freq = pd.DataFrame(freq, index=index, columns=self.all_balls)
+        return freq
 
-# %% 探索求频率的步长
-max_records = []
-min_records = []
-index = history.index[0:200]
-columns = list(range(1, 201))
-for term, next_term in zip(history.index[1:201], index):
-    max_records.append([])
-    min_records.append([])
-    for step in columns:
-        print(term, step)
-        frq = get_freq(history.loc[term:], step=step)
-        max_frq = []
-        min_frq = []
-        f = frq['front'].iloc[0].sort_values(0)
-        b = frq['back'].iloc[0].sort_values(0)
-        min_frq.append(f.index[:5].tolist() + b.index[:2].tolist())
-        max_frq.append(f.index[-5:].tolist() + b.index[-2:].tolist())
-        min_frq = pd.DataFrame(min_frq, index=[next_term],
-                               columns=history_columns)
-        max_frq = pd.DataFrame(max_frq, index=[next_term],
-                               columns=history_columns)
-        awards_min_frq = check_awards(min_frq, history)
-        awards_max_frq = check_awards(max_frq, history)
-        max_records[-1].append(awards_max_frq.at[next_term, 'prize'])
-        min_records[-1].append(awards_min_frq.at[next_term, 'prize'])
-max_records = pd.DataFrame(max_records, index=index, columns=columns)
-min_records = pd.DataFrame(min_records, index=index, columns=columns)
+    def check(self, predict_df, reality_df=None):
+        """
+        检查预测的获奖情况
+        :param predict_df: DataFrame，index设为term
+        :param reality_df: DataFrame，index设为term
+        :return: <pd.DataFrame>中奖等级
+        """
+        if not reality_df and self.history:
+            reality_df = self.history
+        elif not reality_df:
+            start_term = predict_df.index.min()
+            end_term = predict_df.index.max()
+            self.get_history(start_term, end_term)
+            reality_df = self.history
+        index = [x for x in predict_df.index if x in reality_df.index]
+        if not index:
+            return None
+        predict_df = predict_df.loc[index]
+        reality_df = reality_df.loc[index]
+        records = []
+        for n in range(len(index)):
+            f = len(set(predict_df.iloc[n]['front']) &
+                    set(reality_df.iloc[n]['front']))
+            b = len(set(predict_df.iloc[n]['back']) &
+                    set(reality_df.iloc[n]['back']))
+            if f == 5 and b == 2:
+                level = '一等奖'
+            elif f == 5 and b == 1:
+                level = '二等奖'
+            elif f == 5 and b == 0:
+                level = '三等奖'
+            elif f == 4 and b == 2:
+                level = '四等奖'
+            elif f == 4 and b == 1:
+                level = '五等奖'
+            elif f == 3 and b == 2:
+                level = '六等奖'
+            elif f == 4 and b == 0:
+                level = '七等奖'
+            elif (f == 3 and b == 1) or (f == 2 and b == 2):
+                level = '八等奖'
+            elif ((f == 3 and b == 0) or (f == 1 and b == 2) or
+                  (f == 2 and b == 1) or (f == 0 and b == 2)):
+                level = '九等奖'
+            else:
+                level = '血亏'
+            records.append([level, self.award_prize[level]])
+        records = pd.DataFrame(records, index=index,
+                               columns=['award', 'prize'])
+        return records
 
-
-
-
-
-
-
-
-
+    def get_freq_core(self, history):
+        """
+        """
+        front_list = history['front'].values.flatten().tolist()
+        back_list = history['back'].values.flatten().tolist()
+        nums = len(history)
+        front_freq = [front_list.count(x) / nums for x in self.front_balls]
+        back_freq = [back_list.count(x) / nums for x in self.back_balls]
+        freq = front_freq + back_freq
+        return freq

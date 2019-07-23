@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file '.\GUI_PyQT5.ui'
+#
+# Created by: PyQt5 UI code generator 5.11.3
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_GUI_PyQT5(object):
+    def setupUi(self, GUI_PyQT5):
+        GUI_PyQT5.setObjectName("GUI_PyQT5")
+        GUI_PyQT5.resize(800, 600)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(GUI_PyQT5.sizePolicy().hasHeightForWidth())
+        GUI_PyQT5.setSizePolicy(sizePolicy)
+        GUI_PyQT5.setMaximumSize(QtCore.QSize(800, 600))
+        self.centralwidget = QtWidgets.QWidget(GUI_PyQT5)
+        self.centralwidget.setObjectName("centralwidget")
+        self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
+        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 800, 578))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy)
+        self.tabWidget.setWhatsThis("")
+        self.tabWidget.setObjectName("tabWidget")
+        self.tab_dlt = QtWidgets.QWidget()
+        self.tab_dlt.setObjectName("tab_dlt")
+        self.tableView = QtWidgets.QTableView(self.tab_dlt)
+        self.tableView.setGeometry(QtCore.QRect(0, 40, 350, 513))
+        self.tableView.setObjectName("tableView")
+        self.graphicsView = QtWidgets.QGraphicsView(self.tab_dlt)
+        self.graphicsView.setEnabled(True)
+        self.graphicsView.setGeometry(QtCore.QRect(350, 0, 450, 553))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.graphicsView.sizePolicy().hasHeightForWidth())
+        self.graphicsView.setSizePolicy(sizePolicy)
+        self.graphicsView.setMaximumSize(QtCore.QSize(800, 600))
+        self.graphicsView.setObjectName("graphicsView")
+        self.label = QtWidgets.QLabel(self.tab_dlt)
+        self.label.setGeometry(QtCore.QRect(0, 10, 40, 20))
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setObjectName("label")
+        self.lineEdit_recent = QtWidgets.QLineEdit(self.tab_dlt)
+        self.lineEdit_recent.setGeometry(QtCore.QRect(40, 10, 60, 20))
+        self.lineEdit_recent.setFrame(True)
+        self.lineEdit_recent.setAlignment(QtCore.Qt.AlignCenter)
+        self.lineEdit_recent.setObjectName("lineEdit_recent")
+        self.label_2 = QtWidgets.QLabel(self.tab_dlt)
+        self.label_2.setGeometry(QtCore.QRect(100, 10, 20, 20))
+        self.label_2.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_2.setObjectName("label_2")
+        self.label_3 = QtWidgets.QLabel(self.tab_dlt)
+        self.label_3.setGeometry(QtCore.QRect(140, 10, 210, 20))
+        self.label_3.setObjectName("label_3")
+        self.tabWidget.addTab(self.tab_dlt, "")
+        self.tab_ssq = QtWidgets.QWidget()
+        self.tab_ssq.setObjectName("tab_ssq")
+        self.label_4 = QtWidgets.QLabel(self.tab_ssq)
+        self.label_4.setGeometry(QtCore.QRect(210, 160, 91, 16))
+        self.label_4.setObjectName("label_4")
+        self.tabWidget.addTab(self.tab_ssq, "")
+        GUI_PyQT5.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(GUI_PyQT5)
+        self.statusbar.setObjectName("statusbar")
+        GUI_PyQT5.setStatusBar(self.statusbar)
+
+        self.retranslateUi(GUI_PyQT5)
+        self.tabWidget.setCurrentIndex(0)
+        self.lineEdit_recent.returnPressed.connect(GUI_PyQT5.refresh)
+        QtCore.QMetaObject.connectSlotsByName(GUI_PyQT5)
+
+    def retranslateUi(self, GUI_PyQT5):
+        _translate = QtCore.QCoreApplication.translate
+        GUI_PyQT5.setWindowTitle(_translate("GUI_PyQT5", "日薪百万"))
+        self.label.setText(_translate("GUI_PyQT5", "最近"))
+        self.lineEdit_recent.setText(_translate("GUI_PyQT5", "50"))
+        self.label_2.setText(_translate("GUI_PyQT5", "期"))
+        self.label_3.setText(_translate("GUI_PyQT5", "中奖号码 ↓    各号码出现的频率 →"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_dlt), _translate("GUI_PyQT5", "大乐透"))
+        self.label_4.setText(_translate("GUI_PyQT5", "正在施工 ……"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_ssq), _translate("GUI_PyQT5", "双色球"))
+
